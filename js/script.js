@@ -332,62 +332,120 @@ if (document.querySelectorAll('.select').length > 0) {
 	select();
 }
 
-// $(document).ready(function() {
+const popupLinks = document.querySelectorAll('.popup-link'),
+      body = document.querySelector('body'),
+      lockPadding = document.querySelectorAll('.lock-padding'), // для фиксированных обьектов
+      timeout = 800;
 
-// 	$('.image-popup').magnificPopup({
-// 		type: 'image',
-// 		closeOnContentClick: true,
-// 		mainClass: 'mfp-img-mobile',
-// 		image: {
-// 			verticalFit: true
-// 		}
-// 	});
+let unlock = true;
 
-// 	$('.image-popup-fit-width').magnificPopup({
-// 		type: 'image',
-// 		closeOnContentClick: true,
-// 		image: {
-// 			verticalFit: false
-// 		}
-// 	});
+if (popupLinks.length > 0) {
+    popupLinks.forEach(item => {
+        item.addEventListener('click', function (e) {
+            const popupName = item.getAttribute('href').replace('#', ''),
+                  currentPopup = document.getElementById(popupName);
+            popupOpen(currentPopup);
+            e.preventDefault();
+        });
+    });
+}
 
-// 	$('.image-popup-no-margins').magnificPopup({
-// 		type: 'image',
-// 		closeOnContentClick: true,
-// 		closeBtnInside: false,
-// 		fixedContentPos: true,
-// 		mainClass: 'mfp-no-margins mfp-with-zoom', // class to remove default margin from left and right side
-// 		image: {
-// 			verticalFit: true
-// 		},
-// 		zoom: {
-// 			enabled: true,
-// 			duration: 300 // don't foget to change the duration also in CSS
-// 		}
-// 	});
+const popupCloseIcon = document.querySelectorAll('.close-popup');
 
-// });
+if (popupCloseIcon.length > 0) {
+    popupCloseIcon.forEach(item => {
+        item.addEventListener('click', function(e) {
+            popupClose(item.closest('.popup'));
+            e.preventDefault();
+        });
+    });
+}
 
-$(document).ready(function() {
-	$('.zoom-gallery').magnificPopup({
-		delegate: 'a',
-		type: 'image',
-		closeOnContentClick: false,
-		closeBtnInside: true,
-		mainClass: 'mfp-with-zoom mfp-img-mobile',
-		image: {
-			verticalFit: true
-		},
-		gallery: {
-			enabled: true
-		},
-		zoom: {
-			enabled: true,
-			duration: 300, // don't foget to change the duration also in CSS
-			opener: function(element) {
-				return element.find('img');
-			}
-		}
-		
-	});
+function popupOpen(currentPopup) {
+    if (currentPopup && unlock) {
+        const popupActive = document.querySelector('.popup.active');
+        if (popupActive) {
+            popupClose(popupActive, false);
+        } else {
+            bodyLock();
+        }
+        currentPopup.classList.add('active');
+        currentPopup.addEventListener('click', function (e) {
+            if (!e.target.closest('.popup__content')) {
+                popupClose(e.target.closest('.popup'));
+            }
+        });
+    }
+}
+
+function popupClose(popupActive, doUnLock = true) {
+    if (unlock) {
+        popupActive.classList.remove('active');
+        if (doUnLock) {
+            bodyUnLock();
+        }
+    }
+}
+
+function bodyLock() {
+    const lockPaddingValue = window.innerWidth - document.querySelector('body').offsetWidth + 'px';
+    if (lockPadding.langth > 0) {
+        lockPadding.forEach(item => {
+            item.style.paddingRight = lockPaddingValue;
+        });
+    }
+    body.style.paddingRight = lockPaddingValue;
+    body.classList.add('lock'); // в css добавить body.lock overflow: hidden; 
+    
+    unlock = false;
+    setTimeout(function () {
+        unlock = true;
+    }, timeout);
+}
+
+function bodyUnLock() {
+    setTimeout(function () {
+        if (lockPadding.length > 0) {
+            lockPadding.forEach(item => {
+                item.style.paddingRight = '0px';
+            });
+        }
+        body.style.paddingRight = '0px';
+        body.classList.remove('lock');
+    }, timeout);
+
+    unlock = false;
+    setTimeout(function () {
+        unlock = true;
+    }, timeout);
+}
+
+document.addEventListener('keydown', (e) => {
+    if (e.which === 27) {
+        const popupActive = document.querySelector('.popup.active');
+        popupClose(popupActive);
+    }
 });
+
+(function () {
+    //проверяем поддержку
+    if (Element.prototype.closest) {
+        // реализуем
+        Element.prototype.closest = function (css) {
+            var node = this;
+            while (node) {
+                if (node.matches(css)) return node;
+                else node = node.parentElement;
+            }
+            return null;
+        };
+    }
+})();
+(function () {
+    if (Element.prototype.matches) {
+        Element.prototype.matches = Element.prototype.matchesSelector ||
+        Element.prototype.webkitMatchesSelector ||
+        Element.prototype.mozMatchesSelector ||
+        Element.prototype.msMatchesSelector;
+    }
+})();
